@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ほんまかいなセキュリティRPG</title>
+<style>
+:root {
+  --bg: #171512;
+  --panel: #25211c;
+  --panel-2: #302922;
+  --ink: #f8f2e8;
+  --muted: #c8b9a5;
+  --line: #5b5042;
+  --line-soft: #40372d;
+  --gold: #f0c24f;
+  --gold-2: #ffd979;
+  --red: #df4c42;
+  --green: #5fc49a;
+  --paper: #fff6df;
+  --paper-ink: #2b251d;
+  --shadow: 0 18px 48px rgba(0, 0, 0, .32);
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --sans: "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { min-height: 100%; background: var(--bg); }
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--sans);
+  background:
+    linear-gradient(120deg, rgba(240, 194, 79, .08), transparent 38%),
+    linear-gradient(240deg, rgba(74, 163, 182, .09), transparent 34%),
+    linear-gradient(180deg, #171512, #221d18 64%, #181512);
+}
+
+button { border: 0; cursor: pointer; font: inherit; }
+button:disabled { cursor: not-allowed; opacity: .48; transform: none; }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.app { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+.scene { display: none; }
+.scene.active { display: block; }
+.screen { width: min(1180px, 100%); margin: 0 auto; padding: 30px; }
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  min-height: 66px;
+  padding: 12px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(20, 18, 15, .94);
+  backdrop-filter: blur(12px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: var(--gold);
+  border: 2px solid var(--gold);
+  background: #11100f;
+  font-family: var(--mono);
+  font-weight: 900;
+}
+.brand h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+.brand small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: .08em;
+}
+.top-actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.text-btn,
+.primary-btn,
+.ghost-btn,
+.icon-btn {
+  min-height: 40px;
+  border-radius: 6px;
+  font-weight: 900;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+.text-btn,
+.ghost-btn,
+.icon-btn {
+  color: var(--ink);
+  background: #312a23;
+  border: 1px solid var(--line);
+}
+.text-btn { padding: 0 14px; font-size: 13px; }
+.icon-btn { width: 42px; font-family: var(--mono); font-size: 18px; }
+.primary-btn {
+  padding: 0 20px;
+  color: #1d1710;
+  background: var(--gold);
+  border: 1px solid var(--gold-2);
+}
+.ghost-btn {
+  padding: 0 18px;
+  background: transparent;
+}
+.text-btn:hover,
+.ghost-btn:hover,
+.icon-btn:hover,
+.primary-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--gold);
+}
+.primary-btn:hover { background: var(--gold-2); }
+
+.intro-grid {
+  min-height: calc(100vh - 66px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.06fr) minmax(320px, .94fr);
+  gap: 38px;
+  align-items: center;
+}
+.city-stage {
+  position: relative;
+  min-height: 530px;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, #241c24 0%, #3d2c2e 48%, #171512 49%, #171512 100%);
+  box-shadow: var(--shadow);
+}
+.building {
+  position: absolute;
+  bottom: 150px;
+  width: 18%;
+  border: 2px solid rgba(255, 255, 255, .1);
+  background: #252533;
+}
+.building::before {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  background:
+    linear-gradient(90deg, transparent 0 28%, rgba(240, 194, 79, .82) 28% 40%, transparent 40% 62%, rgba(74, 163, 182, .75) 62% 74%, transparent 74% 100%),
+    linear-gradient(180deg, transparent 0 18%, rgba(255, 255, 255, .08) 18% 22%, transparent 22% 44%, rgba(255, 255, 255, .08) 44% 48%, transparent 48% 70%, rgba(255, 255, 255, .08) 70% 74%, transparent 74% 100%);
+}
+.b1 { left: 5%; height: 190px; background: #24303b; }
+.b2 { left: 24%; height: 270px; background: #302a3d; }
+.b3 { right: 26%; height: 220px; background: #263a34; }
+.b4 { right: 6%; height: 300px; background: #33272b; }
+.tower {
+  position: absolute;
+  left: 48%;
+  bottom: 150px;
+  width: 18px;
+  height: 330px;
+  border: 2px solid rgba(255, 255, 255, .12);
+  background: #4c3728;
+}
+.tower::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -70px;
+  width: 4px;
+  height: 70px;
+  transform: translateX(-50%);
+  background: var(--gold);
+}
+.street {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 152px;
+  border-top: 3px solid #614b36;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .16) 0 42px, transparent 42px 76px),
+    linear-gradient(180deg, #23201d, #0e0d0c);
+}
+.train {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 72px;
+  height: 44px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+  padding: 7px 11px;
+  border: 4px solid #2b2926;
+  background: #d3d0c4;
+  box-shadow: 0 10px 0 #0c0b0a;
+}
+.train span { background: #247389; border: 2px solid #1c5362; }
+.mentor {
+  position: absolute;
+  left: 48px;
+  bottom: 154px;
+  width: 156px;
+  height: 220px;
+}
+.mentor svg,
+.portrait-card svg { width: 100%; height: 100%; }
+.speech {
+  position: absolute;
+  left: 250px;
+  right: 44px;
+  bottom: 210px;
+  padding: 18px 20px;
+  border: 3px solid var(--ink);
+  color: var(--ink);
+  background: rgba(20, 17, 14, .94);
+  box-shadow: 0 0 0 4px rgba(20, 17, 14, .94), 0 12px 30px rgba(0, 0, 0, .28);
+}
+.speech .name,
+.dialog-name {
+  color: var(--gold);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+.speech p {
+  margin: 10px 0 0;
+  font-size: 21px;
+  line-height: 1.85;
+  font-weight: 900;
+}
+.intro-card,
+.map-panel,
+.side-panel,
+.dialog-panel,
+.threat-panel,
+.result-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(37, 33, 28, .94);
+  box-shadow: var(--shadow);
+}
+.intro-card { padding: 34px; }
+.eyebrow,
+.rank {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  color: #1d1710;
+  background: var(--gold);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+.intro-card h2 {
+  margin: 18px 0 14px;
+  font-size: 46px;
+  line-height: 1.14;
+  letter-spacing: 0;
+}
+.intro-card p,
+.result-panel p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.9;
+}
+.intro-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+
+.status-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stat {
+  min-height: 82px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(37, 33, 28, .9);
+}
+.stat b {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: .12em;
+}
+.stat span {
+  display: block;
+  margin-top: 7px;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 900;
+}
+.map-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 370px);
+  gap: 16px;
+}
+.map-panel,
+.side-panel,
+.dialog-panel,
+.threat-panel,
+.result-panel { padding: 18px; }
+.section-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.section-title h2,
+.side-panel h3,
+.challenge h3 {
+  margin: 0;
+}
+.section-title h2 { font-size: 26px; }
+.section-title code,
+.plan-item b,
+.report-item b,
+.lesson b,
+.badge b,
+.flag-review b { color: var(--gold); font-weight: 900; }
+.section-title code { font-family: var(--mono); }
+
+.quest-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(148px, auto));
+  gap: 24px;
+  min-height: 620px;
+  padding: 28px;
+  border: 2px solid #3e362d;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, .03) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, .03) 1px, transparent 1px),
+    #201d19;
+  background-size: 44px 44px;
+}
+.route { display: none; }
+.quest-node {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 148px;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr;
+  align-content: start;
+  gap: 7px;
+  padding: 13px;
+  color: var(--ink);
+  text-align: left;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: #2a241e;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, .24);
+}
+.quest-node:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--gold); }
+.quest-node:disabled { cursor: not-allowed; opacity: .46; }
+.quest-node.done { border-color: rgba(95, 196, 154, .9); }
+.quest-node.next {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(240, 194, 79, .14), 0 14px 28px rgba(0, 0, 0, .28);
+}
+.node-0 { grid-column: 1; grid-row: 1; }
+.node-1 { grid-column: 2; grid-row: 1; }
+.node-2 { grid-column: 3; grid-row: 1; }
+.node-3 { grid-column: 1; grid-row: 3; }
+.node-4 { grid-column: 2; grid-row: 3; }
+.node-5 { grid-column: 3; grid-row: 3; }
+.node-final {
+  grid-column: 2;
+  grid-row: 2;
+  background: #332022;
+  border-color: var(--red);
+}
+.quest-node strong { font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; }
+.node-code {
+  color: var(--gold);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 900;
+}
+.node-tag {
+  width: fit-content;
+  align-self: end;
+  min-height: 22px;
+  padding: 3px 7px;
+  color: #1b1511;
+  background: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+.done-tag { background: var(--green); }
+.next-tag { background: var(--gold); }
+
+.plan-list,
+.report-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.plan-item,
+.report-item,
+.lesson,
+.badge {
+  padding: 12px;
+  border: 1px solid #463d33;
+  border-radius: 8px;
+  background: #2d271f;
+}
+.plan-item span,
+.report-item span,
+.lesson span,
+.badge span,
+.matrix-row span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.scenario-layout {
+  min-height: calc(100vh - 100px);
+  display: grid;
+  grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+.dialog-panel { display: flex; flex-direction: column; }
+.portrait-card {
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 14px;
+  overflow: hidden;
+  border: 2px solid #463d33;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(240, 194, 79, .1), rgba(74, 163, 182, .1)),
+    #201d19;
+}
+.portrait-card svg { width: min(240px, 80%); height: auto; }
+.dialog-box {
+  flex: 1;
+  min-height: 220px;
+  padding: 17px;
+  border: 3px solid var(--ink);
+  background: #151210;
+  box-shadow: 0 0 0 4px #151210;
+}
+.dialog-text {
+  min-height: 8.8em;
+  margin-top: 10px;
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.85;
+}
+.dialog-controls { display: flex; align-items: center; gap: 10px; margin-top: 15px; }
+.tap-hint { color: var(--muted); font-size: 12px; }
+.threat-card {
+  margin-bottom: 16px;
+  padding: 16px;
+  color: var(--paper-ink);
+  border: 2px solid #4b4035;
+  border-radius: 8px;
+  background: var(--paper);
+}
+.threat-card h2 {
+  margin: 0 0 10px;
+  color: var(--paper-ink);
+  font-size: 28px;
+  line-height: 1.2;
+}
+.threat-card p { margin: 0; color: #4f4336; font-size: 14px; line-height: 1.85; }
+.threat-hint { margin-top: 13px; color: #766856; font-size: 12px; font-weight: 900; }
+.challenge { display: none; }
+.challenge.active { display: block; }
+.choice-list { display: grid; gap: 10px; }
+.choice {
+  width: 100%;
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 15px;
+  color: var(--ink);
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #2d271f;
+}
+.choice:hover:not(:disabled) { border-color: var(--gold); background: #352c22; }
+.choice:disabled { cursor: default; }
+.choice .key {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: #1d1710;
+  border-radius: 6px;
+  background: var(--muted);
+  font-family: var(--mono);
+  font-weight: 900;
+}
+.choice.correct { border-color: var(--green); background: rgba(95, 196, 154, .17); }
+.choice.correct .key { background: var(--green); }
+.choice.wrong { border-color: var(--red); background: rgba(223, 76, 66, .16); }
+.choice.wrong .key { color: #fff; background: var(--red); }
+.feedback {
+  display: none;
+  margin-top: 14px;
+  padding: 15px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: #181512;
+}
+.feedback.active { display: block; }
+.feedback h3 { margin: 0 0 8px; font-size: 18px; }
+.feedback p { margin: 0 0 12px; color: var(--muted); line-height: 1.75; font-size: 14px; }
+.flag-review {
+  margin: 12px 0 14px;
+  padding: 12px;
+  border: 1px solid #463d33;
+  border-radius: 8px;
+  background: #211c17;
+}
+.redflags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.redflag {
+  min-height: 28px;
+  padding: 5px 9px;
+  color: #fff7f4;
+  border-radius: 6px;
+  background: #9f332f;
+  font-size: 12px;
+  font-weight: 900;
+}
+.lesson-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 14px;
+}
+.lesson { min-height: 84px; }
+
+.final-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 16px;
+  align-items: start;
+}
+.result-panel { padding: 28px; }
+.result-panel h2 {
+  margin: 16px 0 14px;
+  font-size: 42px;
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+.score-big {
+  margin: 18px 0;
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 68px;
+  font-weight: 900;
+  line-height: 1;
+}
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: none;
+  place-items: center;
+  padding: 18px;
+  background: rgba(10, 8, 7, .72);
+}
+.modal.active { display: grid; }
+.modal-card {
+  width: min(860px, 100%);
+  max-height: min(82vh, 780px);
+  overflow: auto;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: #251f19;
+  box-shadow: var(--shadow);
+}
+.modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: #251f19;
+}
+.modal-head h2 { margin: 0; font-size: 20px; }
+.modal-body { padding: 16px; }
+.matrix { display: grid; gap: 10px; }
+.matrix-row {
+  display: grid;
+  grid-template-columns: 150px 1fr 1fr;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #463d33;
+  border-radius: 8px;
+  background: #2d271f;
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 40;
+  width: min(520px, calc(100vw - 28px));
+  padding: 13px 15px;
+  color: #16120f;
+  border-radius: 8px;
+  background: var(--gold);
+  font-weight: 900;
+  text-align: center;
+  transform: translate(-50%, 90px);
+  opacity: 0;
+  transition: transform .25s ease, opacity .25s ease;
+}
+.toast.active { transform: translate(-50%, 0); opacity: 1; }
+
+@media (max-width: 930px) {
+  .intro-grid,
+  .map-grid,
+  .scenario-layout,
+  .final-grid { grid-template-columns: 1fr; }
+  .screen { padding: 24px; }
+  .city-stage { min-height: 450px; }
+  .speech { left: 20px; right: 20px; bottom: 176px; }
+  .speech p { font-size: 18px; }
+  .mentor { left: 28px; width: 116px; height: 164px; }
+  .intro-card h2 { font-size: 38px; }
+  .result-panel h2 { font-size: 34px; }
+  .status-strip,
+  .lesson-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .quest-board {
+    min-height: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px;
+  }
+  .quest-node,
+  .node-final {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .matrix-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .screen { padding: 14px; }
+  .topbar { align-items: flex-start; padding: 10px 14px; }
+  .brand h1 { white-space: normal; font-size: 17px; }
+  .top-actions { width: 100%; margin-left: 0; }
+  .status-strip,
+  .lesson-grid,
+  .quest-board { grid-template-columns: 1fr; }
+  .intro-card { padding: 22px; }
+  .intro-card h2 { font-size: 30px; }
+  .city-stage { min-height: 410px; }
+  .section-title h2,
+  .threat-card h2 { font-size: 22px; }
+  .stat span { font-size: 24px; }
+  .score-big { font-size: 54px; }
+  .choice { grid-template-columns: 30px 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand" aria-label="ほんまかいなセキュリティRPG">
+      <div class="brand-mark">?</div>
+      <div>
+        <h1>ほんまかいなセキュリティRPG</h1>
+        <small>会社を守る「疑う力」訓練アプリ</small>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="text-btn" id="planBtn" type="button">学習内容</button>
+      <button class="text-btn" id="mapBtn" type="button">マップ</button>
+      <button class="icon-btn" id="resetBtn" type="button" title="最初から" aria-label="最初から">↻</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="scene active" id="introScene">
+      <div class="screen intro-grid">
+        <div class="city-stage" aria-label="大阪をイメージした研修RPGの街">
+          <div class="building b1"></div>
+          <div class="building b2"></div>
+          <div class="tower"></div>
+          <div class="building b3"></div>
+          <div class="building b4"></div>
+          <div class="mentor" aria-hidden="true">
+            <svg viewBox="0 0 156 220" role="img">
+              <title>ツッコミ師匠</title>
+              <rect x="44" y="68" width="68" height="64" rx="8" fill="#f1c083"/>
+              <rect x="38" y="58" width="80" height="24" rx="10" fill="#25211c"/>
+              <rect x="28" y="102" width="100" height="78" rx="12" fill="#246a78"/>
+              <rect x="44" y="118" width="68" height="60" fill="#f4ead7"/>
+              <rect x="51" y="89" width="14" height="7" fill="#211b17"/>
+              <rect x="91" y="89" width="14" height="7" fill="#211b17"/>
+              <rect x="69" y="104" width="18" height="5" fill="#9f332f"/>
+              <rect x="17" y="120" width="26" height="84" rx="8" fill="#f1c083" transform="rotate(8 30 162)"/>
+              <rect x="112" y="112" width="24" height="76" rx="8" fill="#f1c083" transform="rotate(-18 124 150)"/>
+              <rect x="101" y="34" width="14" height="84" rx="4" fill="#f0c24f" transform="rotate(34 108 76)"/>
+              <rect x="42" y="178" width="26" height="34" fill="#302922"/>
+              <rect x="88" y="178" width="26" height="34" fill="#302922"/>
+            </svg>
+          </div>
+          <div class="speech">
+            <div class="name">TSUKKOMI MASTER</div>
+            <p>大阪の人はオレオレ詐欺に引っかからへんらしい。ほんまかいな。まず疑う。その一言が、会社の最初の防具や。</p>
+          </div>
+          <div class="street">
+            <div class="train" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          </div>
+        </div>
+        <div class="intro-card">
+          <span class="eyebrow">SECURITY QUEST</span>
+          <h2>怪しい依頼に、きれいにツッコむ。</h2>
+          <p>会社で起きがちなセキュリティ事故を、ストーリー形式で学ぶ研修RPGです。なりすまし、フィッシング、情報漏洩、認証、端末管理、インシデント報告を、実際の行動選択として練習します。</p>
+          <p>正解は「疑う」だけではありません。別ルートで確認する、承認済みの道具だけ使う、最小限に共有する、すぐ報告する。会社でそのまま使える動きまでがクリア条件です。</p>
+          <div class="intro-actions">
+            <button class="primary-btn" id="startBtn" type="button">訓練を開始</button>
+            <button class="ghost-btn" id="introPlanBtn" type="button">内容を見る</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene" id="mapScene">
+      <div class="screen">
+        <div class="status-strip" id="statusStrip"></div>
+        <div class="map-grid">
+          <section class="map-panel">
+            <div class="section-title">
+              <code>AREA MAP</code>
+              <h2>浪花セキュリティ街道</h2>
+            </div>
+            <div class="quest-board" id="questBoard"></div>
+          </section>
+          <aside class="side-panel">
+            <h3>今回決めた教育内容</h3>
+            <ul class="plan-list" id="mapPlan"></ul>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene" id="scenarioScene">
+      <div class="screen scenario-layout">
+        <section class="dialog-panel">
+          <div class="portrait-card" aria-hidden="true">
+            <svg viewBox="0 0 240 240" role="img">
+              <title>研修ナビゲーター</title>
+              <rect x="84" y="55" width="72" height="74" rx="12" fill="#f1c083"/>
+              <rect x="74" y="44" width="92" height="28" rx="12" fill="#25211c"/>
+              <rect x="58" y="124" width="124" height="86" rx="14" fill="#246a78"/>
+              <rect x="84" y="140" width="72" height="66" fill="#f4ead7"/>
+              <rect x="96" y="86" width="14" height="8" fill="#211b17"/>
+              <rect x="132" y="86" width="14" height="8" fill="#211b17"/>
+              <rect x="108" y="106" width="26" height="5" fill="#9f332f"/>
+              <rect x="42" y="137" width="28" height="82" rx="10" fill="#f1c083" transform="rotate(14 56 178)"/>
+              <rect x="166" y="120" width="24" height="94" rx="10" fill="#f1c083" transform="rotate(-24 178 167)"/>
+              <rect x="161" y="45" width="16" height="102" rx="5" fill="#f0c24f" transform="rotate(36 169 96)"/>
+            </svg>
+          </div>
+          <div class="dialog-box" id="dialogBox">
+            <div class="dialog-name">ツッコミ師匠</div>
+            <div class="dialog-text" id="dialogText"></div>
+          </div>
+          <div class="dialog-controls">
+            <button class="primary-btn" id="nextLineBtn" type="button">次へ</button>
+            <span class="tap-hint">会話を進めて、選択肢を出します</span>
+          </div>
+        </section>
+        <section class="threat-panel">
+          <div class="threat-card" id="threatCard"></div>
+          <div class="challenge" id="challengeArea">
+            <h3>どう動く?</h3>
+            <div class="choice-list" id="choiceList"></div>
+            <div class="feedback" id="feedback"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="scene" id="finalScene">
+      <div class="screen final-grid">
+        <section class="result-panel">
+          <div class="rank" id="rankLabel"></div>
+          <h2>研修クリア。会社を守るツッコミが身につきました。</h2>
+          <div class="score-big" id="finalScore"></div>
+          <p id="finalMessage"></p>
+          <div class="badge-grid" id="badgeGrid"></div>
+          <div class="intro-actions">
+            <button class="primary-btn" id="replayBtn" type="button">もう一度プレイ</button>
+            <button class="ghost-btn" id="reviewBtn" type="button">章を見直す</button>
+          </div>
+        </section>
+        <aside class="side-panel">
+          <h3>ゲームコンテンツ化の企画</h3>
+          <ul class="report-list" id="contentPlan"></ul>
+        </aside>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="planModal" role="dialog" aria-modal="true" aria-labelledby="planTitle">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 id="planTitle">セキュリティ教育内容とゲーム化企画</h2>
+      <button class="icon-btn" id="closePlanBtn" type="button" title="閉じる">X</button>
+    </div>
+    <div class="modal-body">
+      <div class="matrix" id="planMatrix"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const chapters = [
+  {
+    code: "CH01",
+    title: "なりすまし電話",
+    area: "道頓堀コール横丁",
+    theme: "ソーシャルエンジニアリング",
+    threat: "社長を名乗る人物から電話。『急ぎで取引先リストを個人メールに送って。会議中やから誰にも言わんといて』と言われた。この会社では、電話で機密情報の送付依頼が来ることはない。",
+    dialog: [
+      "最初の相手は電話や。けど、この会社では電話で機密情報を送れ、なんて依頼は来ない決まりや。",
+      "大阪式でいくなら、まず心の中で『ほんまかいな』や。",
+      "対応せずに止める。そして上司へ報告する。これが会社員の強いツッコミや。"
+    ],
+    redFlags: ["電話依頼", "急がせる", "秘密にさせる", "個人メール"],
+    choices: [
+      { text: "無視して上司へ報告", correct: true, result: "正解。この会社では電話で機密情報の送付依頼は来ません。対応せず、上司へ報告します。" },
+      { text: "個人メールへ送る", correct: false, result: "危険。声や肩書きだけでは本人確認になりません。個人メールへの送付は漏洩の入口です。" },
+      { text: "登録済み番号へ折り返す", correct: false, result: "この会社ルールでは、電話依頼そのものに対応しません。折り返すより先に、上司へ報告します。" }
+    ],
+    lessons: [
+      ["停止", "電話で機密情報を求められても対応しない。"],
+      ["制御", "機密情報は個人メールや私物チャットへ送らない。"],
+      ["報告", "電話が来た事実を上司へ報告する。"]
+    ]
+  },
+  {
+    code: "CH02",
+    title: "フィッシングメール",
+    area: "メール横丁",
+    theme: "認証情報の保護",
+    threat: "『給与明細の確認期限は本日まで』というメールが届いた。リンク先は company-payroll.secure-login.example 風の見た目だが、送信元が微妙に違う。",
+    dialog: [
+      "次はメールや。『本日まで』『アカウント停止』『給与』は、心を急かすための常套句や。",
+      "見た目が会社っぽくても、リンクと送信元は別問題やで。",
+      "給与や人事の話は、メールのリンクから入らず、HRへ確認するんや。"
+    ],
+    redFlags: ["期限で焦らせる", "似せたドメイン", "ログイン誘導", "送信元違和感"],
+    choices: [
+      { text: "HRに確認して報告", correct: true, result: "正解。給与や人事関連の不審メールは、メールのリンクを使わずHRへ確認し、社内手順で報告します。" },
+      { text: "メールのリンクからログイン", correct: false, result: "危険。偽ログイン画面は本物そっくりに作られます。見た目ではなく経路を確認します。" },
+      { text: "同僚へ転送して聞く", correct: false, result: "危険。攻撃メールを拡散する可能性があります。転送ではなく報告ボタンや指定窓口を使います。" }
+    ],
+    lessons: [
+      ["確認", "給与や人事の不審メールはHRへ確認する。"],
+      ["防御", "ID、パスワード、MFAコードはメール誘導先に入力しない。"],
+      ["報告", "怪しいメールは社内手順で報告し、転送で広げない。"]
+    ]
+  },
+  {
+    code: "CH03",
+    title: "情報持ち出し",
+    area: "資料蔵",
+    theme: "情報分類と外部サービス",
+    threat: "提案資料を急いで作るため、顧客一覧と契約金額が入った表を、承認されていない外部AIサービスに貼り付けて要約したくなった。",
+    dialog: [
+      "便利な道具ほど、貼る前に一拍置くんや。",
+      "顧客名、契約金額、未公開計画、個人情報。これらは『作業が早くなる』だけでは外に出せへん。",
+      "使っていいAI、伏せるべき情報、残すべき記録。会社のルールに合わせるのがプロや。"
+    ],
+    redFlags: ["顧客情報", "契約金額", "未承認サービス", "貼り付け共有"],
+    choices: [
+      { text: "匿名化して承認済みツールで処理", correct: true, result: "正解。機密度に応じて匿名化、最小化、承認済みツール利用を徹底します。" },
+      { text: "顧客名入りでAIに貼る", correct: false, result: "危険。入力データが外部に保存、学習、閲覧される可能性があります。社内規程を確認します。" },
+      { text: "ファイル名だけ変えてアップロード", correct: false, result: "危険。ファイル名では情報を保護できません。中身の機密度と送信先が重要です。" }
+    ],
+    lessons: [
+      ["分類", "公開、社外秘、機密、個人情報などの区分を先に見る。"],
+      ["最小化", "必要な項目だけ使い、顧客名などは匿名化する。"],
+      ["承認", "外部AI、翻訳、共有サービスは承認済みのものだけ使う。"]
+    ]
+  },
+  {
+    code: "CH04",
+    title: "パスワード門",
+    area: "認証の門",
+    theme: "パスワードとMFA",
+    threat: "深夜にMFA承認通知が連続で届いた。さらに同僚から『共有アカウントのパスワード教えて』とチャットが来ている。",
+    dialog: [
+      "MFAが鳴ったから安全、ではない。覚えのない通知は、誰かがパスワードを試している合図かもしれん。",
+      "共有アカウントも要注意や。誰が何をしたか分からん状態は、事故の後で詰む。",
+      "認証は城門や。開ける相手を間違えたら、あとは中で暴れ放題やで。"
+    ],
+    redFlags: ["覚えのないMFA", "連続通知", "共有パスワード", "深夜アクセス"],
+    choices: [
+      { text: "MFAを拒否し情シスへ連絡", correct: true, result: "正解。覚えのないMFAは承認せず、侵害の可能性としてすぐ報告します。" },
+      { text: "通知を承認して止める", correct: false, result: "危険。MFA疲れを狙う攻撃があります。承認した瞬間に侵入を許す可能性があります。" },
+      { text: "共有パスワードをチャット送信", correct: false, result: "危険。パスワードをチャットで共有すると、漏洩時に追跡も停止も難しくなります。" }
+    ],
+    lessons: [
+      ["拒否", "覚えのないMFAは承認せず拒否する。"],
+      ["変更", "パスワード侵害が疑われる時は速やかに変更する。"],
+      ["個別化", "共有IDではなく、個人IDと必要最小限の権限を使う。"]
+    ]
+  },
+  {
+    code: "CH05",
+    title: "端末とネットワーク",
+    area: "梅田デバイス駅",
+    theme: "端末保安とリモートワーク",
+    threat: "出張先のカフェで作業しようとしている。PCのアップデート通知が出ており、机には誰のものか分からないUSBメモリが落ちている。急ぎで社内資料を送る必要があるが、この会社ではカフェでの業務は禁止されている。",
+    dialog: [
+      "外で仕事をする時ほど、まず場所のルールを見るんや。",
+      "この会社ではカフェ作業は禁止。VPNを使っても、画面を見られたら終わりや。",
+      "急ぎでも、禁止場所では作業しない。安全な場所へ移動してから対応するんや。"
+    ],
+    redFlags: ["カフェ作業禁止", "公共の場所", "不明USB", "急ぎの送信"],
+    choices: [
+      { text: "作業せず許可場所へ移動", correct: true, result: "正解。カフェでの業務は禁止です。作業を始めず、会社が許可した安全な場所へ移動してから対応します。" },
+      { text: "不明USBで資料を運ぶ", correct: false, result: "危険。不明USBはマルウェア感染や情報持ち出しの原因になります。" },
+      { text: "VPNでカフェ作業を続ける", correct: false, result: "危険。VPNだけでは覗き見や置き忘れを防げません。そもそも禁止場所では作業しません。" }
+    ],
+    lessons: [
+      ["場所", "カフェなど禁止された公共スペースでは作業しない。"],
+      ["媒体", "不明USBや私物媒体を会社端末に挿さない。"],
+      ["更新", "OSやアプリの更新は計画的に適用し、許可された環境で作業する。"]
+    ]
+  },
+  {
+    code: "CH06",
+    title: "やらかし報告所",
+    area: "インシデント番所",
+    theme: "早期報告と被害拡大防止",
+    threat: "怪しいリンクを開いてしまった気がする。すぐ閉じたが、ログイン情報を入れたかもしれない。怒られるのが嫌で黙っておきたい。",
+    dialog: [
+      "最後は一番大事なところや。事故はゼロにできへん。けど、被害を小さくすることはできる。",
+      "報告は反省文やない。消火器や。",
+      "早い報告ほど、アカウント停止、ログ確認、端末隔離が間に合う。黙るのが一番高くつくんや。"
+    ],
+    redFlags: ["リンククリック", "認証情報入力の可能性", "黙っておきたい", "初動遅れ"],
+    choices: [
+      { text: "すぐ報告して証跡を残す", correct: true, result: "正解。早期報告により、アカウント停止、ログ調査、端末確認をすぐ始められます。" },
+      { text: "数日様子を見る", correct: false, result: "危険。攻撃は静かに進むことがあります。初動が遅れるほど調査範囲も被害も広がります。" },
+      { text: "履歴とメールを消す", correct: false, result: "危険。証跡を消すと調査が難しくなります。隠すより早く伝えることが会社を守ります。" }
+    ],
+    lessons: [
+      ["即時", "クリックや入力の疑いだけでも、迷わず早く報告する。"],
+      ["保存", "メール、URL、時刻、画面などの証跡を残す。"],
+      ["連携", "自己判断で消去や復旧をせず、情シスの指示に従う。"]
+    ]
+  }
+];
+
+const finalBoss = {
+  code: "BOSS",
+  title: "偽CEO決裁",
+  area: "通天閣ファイアウォール",
+  theme: "総合判断",
+  threat: "役員を名乗るチャット、似せたメール、未承認クラウド、MFA通知が同時に来た。『今すぐ送金資料と顧客一覧を共有しろ。報告は後でいい』という依頼だ。",
+  dialog: [
+    "ここまで来たら総合戦や。",
+    "急がせる、秘密にさせる、別経路を使わせる、認証を押させる。攻撃者は単発ではなく連携で来る。",
+    "さあ、ほんまかいなで止めて、会社のルールに戻すんや。"
+  ],
+  redFlags: ["役員なりすまし", "送金と顧客情報", "未承認クラウド", "MFA通知", "報告禁止"],
+  choices: [
+    { text: "確認・停止・拒否・即時報告", correct: true, result: "完全防御。複数の赤旗を一つずつ切り分け、社内手順へ戻せました。" },
+    { text: "未承認クラウドへ置く", correct: false, result: "危険。役員案件ほど手順が重要です。未承認クラウドへの機密共有は漏洩に直結します。" },
+    { text: "MFAだけ承認する", correct: false, result: "危険。MFAを承認するとアカウント侵害が成立する可能性があります。覚えのない通知は拒否です。" }
+  ],
+  lessons: [
+    ["停止", "急ぎでも一度止めて、本人確認と承認経路へ戻す。"],
+    ["分離", "送金、情報共有、認証通知を別々のリスクとして処理する。"],
+    ["報告", "自分だけで抱えず、情シス、上長、経理など必要部署に共有する。"]
+  ]
+};
+
+const educationPlan = [
+  ["疑う力", "オレオレ詐欺の『ほんまかいな』を入口に、急がせる、秘密にさせる、権威を使うなどの赤旗を見つける。", "赤旗は回答後に表示し、どこが怪しかったかを答え合わせする。"],
+  ["検証行動", "本人確認、URL確認、HR確認、上司への報告など、会社ルールに沿った確認先を覚える。", "選択肢を短い行動コマンドにして、実務で選ぶ動きに近づける。"],
+  ["情報漏洩防止", "顧客情報、契約情報、個人情報、未公開資料を分類し、承認済みツールと最小共有を徹底する。", "資料蔵ステージで外部AIやクラウドに貼る誘惑を出し、匿名化と承認済みツールを選ばせる。"],
+  ["システム保安", "MFA、パスワード管理、端末ロック、カフェ作業禁止、アップデート、不明USBの扱いを学ぶ。", "認証の門とデバイス駅で、業務の急ぎと保安の衝突を選択式にする。"],
+  ["インシデント対応", "クリックや誤送信を隠さず、早期報告、証跡保全、指示待ちを行う。", "最終章で『黙っておきたい』心理を出し、報告が防御行動であると体験させる。"],
+  ["業務定着", "研修後に社内ルール、連絡窓口、承認済みツール一覧へ接続できる設計にする。", "クリア画面にバッジと行動チェックリストを出し、社内展開時にリンク差し替え可能にする。"]
+];
+
+const contentPlan = [
+  ["RPG構造", "全6章とラスボス。1章3分程度で、忙しい社員も分割受講しやすい。"],
+  ["トーン", "『大阪の人はまず疑う』という俗説を、攻撃を疑う姿勢のメタファーとして使う。"],
+  ["評価", "正解率だけでなく、赤旗を理解したか、報告行動を選べたか、漏洩リスクを抑えられたかを重視する。"],
+  ["拡張", "社名、通報窓口、承認済みツール、実際の規程名をデータ差し替えで追加できる。"]
+];
+
+const state = {
+  completed: new Set(),
+  score: 0,
+  risk: 0,
+  mistakes: 0,
+  current: null,
+  currentIsBoss: false,
+  line: 0,
+  typing: null,
+  answers: []
+};
+
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+function showScene(id) {
+  $$(".scene").forEach((scene) => scene.classList.remove("active"));
+  $(id).classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+function toast(message) {
+  const el = $("#toast");
+  el.textContent = message;
+  el.classList.add("active");
+  window.clearTimeout(toast.timer);
+  toast.timer = window.setTimeout(() => el.classList.remove("active"), 2200);
+}
+
+function hideToast() {
+  window.clearTimeout(toast.timer);
+  $("#toast").classList.remove("active");
+}
+
+function resetGame() {
+  state.completed = new Set();
+  state.score = 0;
+  state.risk = 0;
+  state.mistakes = 0;
+  state.current = null;
+  state.currentIsBoss = false;
+  state.line = 0;
+  state.answers = [];
+  stopTyping();
+  renderMap();
+  showScene("#introScene");
+  toast("訓練データをリセットしました");
+}
+
+function renderStatus() {
+  const total = chapters.length;
+  const completed = state.completed.size;
+  const bossDone = state.answers.some((a) => a.code === "BOSS");
+  $("#statusStrip").innerHTML = [
+    ["クリア章", `${completed}/${total}`],
+    ["ツッコミ力", `${state.score}`],
+    ["漏洩リスク", `${state.risk}%`],
+    ["ラスボス", bossDone ? "挑戦済" : completed === total ? "解放" : "未解放"]
+  ].map(([label, value]) => `<div class="stat"><b>${label}</b><span>${value}</span></div>`).join("");
+}
+
+function renderMap() {
+  renderStatus();
+  const nextIndex = chapters.findIndex((_, index) => !state.completed.has(index));
+  const board = $("#questBoard");
+  board.innerHTML = "";
+  chapters.forEach((chapter, index) => {
+    const done = state.completed.has(index);
+    const unlocked = done || index === nextIndex || nextIndex === -1;
+    const node = document.createElement("button");
+    node.type = "button";
+    node.className = `quest-node node-${index}${done ? " done" : ""}${index === nextIndex ? " next" : ""}`;
+    node.disabled = !unlocked;
+    node.innerHTML = `
+      <span class="node-code">${chapter.code}</span>
+      <strong>${chapter.title}</strong>
+      <span>${chapter.area}</span>
+      <span class="node-tag ${done ? "done-tag" : index === nextIndex ? "next-tag" : ""}">${done ? "CLEAR" : index === nextIndex ? "NEXT" : "LOCK"}</span>
+    `;
+    node.addEventListener("click", () => startChapter(index));
+    board.appendChild(node);
+  });
+
+  const finalUnlocked = state.completed.size === chapters.length;
+  const finalDone = state.answers.some((a) => a.code === "BOSS");
+  const boss = document.createElement("button");
+  boss.type = "button";
+  boss.className = `quest-node node-final${finalUnlocked ? " next" : ""}${finalDone ? " done" : ""}`;
+  boss.disabled = !finalUnlocked || finalDone;
+  boss.innerHTML = `
+    <span class="node-code">BOSS</span>
+    <strong>偽CEO決裁</strong>
+    <span>総合判断ステージ</span>
+    <span class="node-tag ${finalDone ? "done-tag" : finalUnlocked ? "next-tag" : ""}">${finalDone ? "CLEAR" : finalUnlocked ? "OPEN" : "LOCK"}</span>
+  `;
+  boss.addEventListener("click", startBoss);
+  board.appendChild(boss);
+
+  $("#mapPlan").innerHTML = educationPlan.slice(0, 5).map((item) => (
+    `<li class="plan-item"><b>${item[0]}</b><span>${item[1]}</span></li>`
+  )).join("");
+}
+
+function renderPlanModal() {
+  $("#planMatrix").innerHTML = educationPlan.map((row) => `
+    <div class="matrix-row">
+      <b>${row[0]}</b>
+      <span>${row[1]}</span>
+      <span>${row[2]}</span>
+    </div>
+  `).join("");
+}
+
+function openPlan() {
+  renderPlanModal();
+  $("#planModal").classList.add("active");
+}
+
+function closePlan() {
+  $("#planModal").classList.remove("active");
+}
+
+function startChapter(index) {
+  state.current = chapters[index];
+  state.currentIsBoss = false;
+  state.line = 0;
+  setupScenario();
+}
+
+function startBoss() {
+  state.current = finalBoss;
+  state.currentIsBoss = true;
+  state.line = 0;
+  setupScenario();
+}
+
+function setupScenario() {
+  const chapter = state.current;
+  hideToast();
+  $("#threatCard").innerHTML = `
+    <span class="eyebrow">${chapter.code} / ${chapter.theme}</span>
+    <h2>${chapter.area}</h2>
+    <p>${chapter.threat}</p>
+    <div class="threat-hint">赤旗は回答後に表示されます。まずは自分で「ほんまかいな」を探してください。</div>
+  `;
+  $("#challengeArea").classList.remove("active");
+  $("#choiceList").innerHTML = "";
+  $("#feedback").classList.remove("active");
+  $("#feedback").innerHTML = "";
+  $("#nextLineBtn").disabled = false;
+  $("#nextLineBtn").textContent = "次へ";
+  showScene("#scenarioScene");
+  typeLine(chapter.dialog[0]);
+}
+
+function stopTyping() {
+  if (state.typing) {
+    window.clearInterval(state.typing);
+    state.typing = null;
+  }
+}
+
+function typeLine(text) {
+  stopTyping();
+  const el = $("#dialogText");
+  el.dataset.full = text;
+  el.textContent = "";
+  let index = 0;
+  state.typing = window.setInterval(() => {
+    index += 1;
+    el.textContent = text.slice(0, index);
+    if (index >= text.length) stopTyping();
+  }, 24);
+}
+
+function nextLine() {
+  if ($("#challengeArea").classList.contains("active")) return;
+  const el = $("#dialogText");
+  if (state.typing) {
+    stopTyping();
+    el.textContent = el.dataset.full || "";
+    return;
+  }
+  state.line += 1;
+  const chapter = state.current;
+  if (state.line < chapter.dialog.length) {
+    typeLine(chapter.dialog[state.line]);
+    return;
+  }
+  $("#nextLineBtn").disabled = true;
+  $("#nextLineBtn").textContent = "選択中";
+  renderChoices();
+}
+
+function shuffledChoices(choices) {
+  const items = choices.map((choice, index) => ({ choice, index }));
+  for (let i = items.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+}
+
+function renderChoices() {
+  const chapter = state.current;
+  const list = $("#choiceList");
+  list.innerHTML = shuffledChoices(chapter.choices).map(({ choice, index }, displayIndex) => `
+    <button class="choice" type="button" data-choice="${index}" data-correct="${choice.correct ? "true" : "false"}">
+      <span class="key">${String.fromCharCode(65 + displayIndex)}</span>
+      <span>${choice.text}</span>
+    </button>
+  `).join("");
+  list.querySelectorAll(".choice").forEach((button) => {
+    button.addEventListener("click", () => choose(Number(button.dataset.choice)));
+  });
+  $("#challengeArea").classList.add("active");
+}
+
+function choose(index) {
+  const chapter = state.current;
+  const choice = chapter.choices[index];
+  const alreadyAnswered = state.answers.some((answer) => answer.code === chapter.code);
+  $$(".choice").forEach((button) => {
+    button.disabled = true;
+    const item = chapter.choices[Number(button.dataset.choice)];
+    if (item.correct) button.classList.add("correct");
+    if (Number(button.dataset.choice) === index && !item.correct) button.classList.add("wrong");
+  });
+
+  if (!alreadyAnswered) {
+    if (choice.correct) {
+      state.score += state.currentIsBoss ? 180 : 100;
+    } else {
+      state.score += state.currentIsBoss ? 40 : 25;
+      state.risk = Math.min(100, state.risk + (state.currentIsBoss ? 30 : 15));
+      state.mistakes += 1;
+    }
+
+    const chapterIndex = chapters.indexOf(chapter);
+    if (!state.currentIsBoss && chapterIndex > -1) state.completed.add(chapterIndex);
+    state.answers.push({ code: chapter.code, title: chapter.title, correct: choice.correct });
+  }
+
+  const resultTitle = choice.correct ? "ナイスツッコミ" : "ここが危ない";
+  $("#feedback").innerHTML = `
+    <h3>${resultTitle}</h3>
+    <p>${choice.result}</p>
+    <div class="flag-review">
+      <b>見抜くポイント</b>
+      <div class="redflags">${chapter.redFlags.map((flag) => `<span class="redflag">${flag}</span>`).join("")}</div>
+    </div>
+    <div class="lesson-grid">
+      ${chapter.lessons.map((lesson) => `<div class="lesson"><b>${lesson[0]}</b><span>${lesson[1]}</span></div>`).join("")}
+    </div>
+    <button class="primary-btn" id="afterChoiceBtn" type="button">${state.currentIsBoss ? "結果を見る" : "マップへ戻る"}</button>
+  `;
+  $("#feedback").classList.add("active");
+  $("#afterChoiceBtn").addEventListener("click", () => {
+    if (state.currentIsBoss) {
+      renderFinal();
+      return;
+    }
+    renderMap();
+    showScene("#mapScene");
+    const remaining = chapters.length - state.completed.size;
+    toast(remaining ? `残り${remaining}章です` : "ラスボスが解放されました");
+  });
+}
+
+function renderFinal() {
+  hideToast();
+  const maxScore = chapters.length * 100 + 180;
+  const pct = Math.min(100, Math.round((state.score / maxScore) * 100));
+  const rank = pct >= 90 ? "浪花の確認名人" : pct >= 70 ? "堅実な防御担当" : "伸びしろありの見習い";
+  $("#rankLabel").textContent = rank;
+  $("#finalScore").textContent = `${pct}%`;
+  $("#finalMessage").textContent = pct >= 90
+    ? `急ぎ、権威、秘密、外部共有、覚えのない認証通知を落ち着いて切り分けられています。漏洩リスクは${state.risk}%でした。`
+    : `基本の流れは掴めています。漏洩リスクは${state.risk}%です。ミスした章を見直して、確認経路と報告行動を固めましょう。`;
+  $("#badgeGrid").innerHTML = chapters.map((chapter) => {
+    const answer = state.answers.find((item) => item.code === chapter.code);
+    return `<div class="badge"><b>${answer && answer.correct ? "取得" : "復習"}: ${chapter.title}</b><span>${chapter.theme}</span></div>`;
+  }).join("");
+  $("#contentPlan").innerHTML = contentPlan.map((item) => (
+    `<li class="report-item"><b>${item[0]}</b><span>${item[1]}</span></li>`
+  )).join("");
+  showScene("#finalScene");
+}
+
+function goMap() {
+  renderMap();
+  showScene("#mapScene");
+}
+
+$("#startBtn").addEventListener("click", () => {
+  goMap();
+  toast("CH01から開始できます");
+});
+$("#introPlanBtn").addEventListener("click", openPlan);
+$("#planBtn").addEventListener("click", openPlan);
+$("#closePlanBtn").addEventListener("click", closePlan);
+$("#planModal").addEventListener("click", (event) => {
+  if (event.target.id === "planModal") closePlan();
+});
+$("#mapBtn").addEventListener("click", goMap);
+$("#resetBtn").addEventListener("click", resetGame);
+$("#nextLineBtn").addEventListener("click", nextLine);
+$("#dialogBox").addEventListener("click", nextLine);
+$("#replayBtn").addEventListener("click", resetGame);
+$("#reviewBtn").addEventListener("click", goMap);
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closePlan();
+  if (event.key === "Enter" && $("#scenarioScene").classList.contains("active") && !$("#challengeArea").classList.contains("active")) {
+    nextLine();
+  }
+});
+
+renderMap();
+renderPlanModal();
+</script>
+</body>
+</html>
